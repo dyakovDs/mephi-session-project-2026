@@ -1,0 +1,42 @@
+    1  hostnamectl set-hostname mephi-2026.domain.local
+    2  nmcli connection modify enp0s3 ipv4.addresses 192.168.1.100/24
+    3  nmcli connection modify enp0s3 ipv4.gateway 192.168.1.1
+    4  nmcli connection modify enp0s3 ipv4.dns 8.8.8.8
+    5  nmcli connection modify enp0s3 ipv4.method manual
+    6  nmcli connection down enp0s3
+    7  nmcli connection up enp0s3
+    8  ping -c 4 192.168.1.1
+    9  ping -c 4 8.8.8.8
+   10  dnf install -y nginx tcpdump libcap-ng-utils
+   11  cd /tmp
+   12  dnf download tcpdump
+   13  rpm -ivh --force tcpdump*.rpm
+   14  fdisk /dev/sdb
+   15  mkfs.ext4 -L MEPHI_DATA /dev/sdb1
+   16  mkdir -p /data/mephi-web
+   17  mount /dev/sdb1 /data/mephi-web
+   18  echo "LABEL=MEPHI_DATA /data/mephi-web ext4 defaults 0 2" >> /etc/fstab
+   19  systemctl start nginx
+   20  systemctl enable nginx
+   21  journalctl -u nginx --since "5 minutes ago" > /tmp/nginx_recent_logs.txt
+   22  useradd mephi-admin
+   23  groupadd mephi-devs
+   24  usermod -aG mephi-devs mephi-admin
+   25  echo "mephi-admin:P@ssw0rd2026" | chpasswd
+   26  chown -R mephi-admin:mephi-devs /data/mephi-web
+   27  chmod 2775 /data/mephi-web
+   28  getenforce
+   29  setenforce 1
+   30  chcon -R -t httpd_sys_content_t /data/mephi-web
+   31  semanage fcontext -a -t httpd_sys_content_t "/data/mephi-web(/.*)?"
+   32  restorecon -Rv /data/mephi-web
+   33  chmod u-s /usr/sbin/tcpdump
+   34  setcap cap_net_raw,cap_net_admin+ep /usr/sbin/tcpdump
+   35  echo "root" > /etc/ssh/denied_users
+   36  usermod -s /sbin/nologin root
+   37  su - mephi-admin
+   38  echo "Hello from Student: M255571" > /data/mephi-web/index.html
+   39  curl http://localhost
+   40  curl http://192.168.1.100
+   41  mkdir -p ~/mephi-report
+   42  history > ~/mephi-report/project_history.txt
